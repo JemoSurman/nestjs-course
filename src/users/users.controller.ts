@@ -1,20 +1,25 @@
-import { Controller, Get, Post } from "@nestjs/common";
+import { Controller, Get, Post, Param } from "@nestjs/common";
 import { UsersService } from "./users.service";
 
 @Controller('users')
 export class UsersController {
 
+    constructor(private readonly usersService: UsersService){}
+
     @Get()
     getUsers(){
-        const usersService = new UsersService();
-        return usersService.getAllUsers();
+        return this.usersService.getAllUsers();
+    }
+
+    @Get(':id')
+    getUsersById(@Param('id') id: any){
+        return this.usersService.getUsersById(+id);
     }
 
     @Post()
     createUsers(){
         const user = {id: 4, name: 'anna', age: 24, gender: 'female', isMarried: false};
-        const usersService = new UsersService(); 
-        usersService.createUser(user);    
+        return this.usersService.createUser(user);    
         return 'A new user has been created!'; 
     }
      
