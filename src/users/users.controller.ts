@@ -24,7 +24,7 @@ export class UsersController {
 
     @Post()
     createUsers(){
-        const user = {id: 4, name: 'anna', age: 24, gender: 'female', isMarried: false};
+        const user = {id: 4, name: 'anna', email: 'anna@gmail.com', gender: 'female', isMarried: false};
         return this.usersService.createUser(user);    
     }
      

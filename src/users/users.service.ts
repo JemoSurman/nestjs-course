@@ -1,8 +1,8 @@
 export class UsersService{
-    users: {id: number, name: string, age: number, gender: string, isMarried: boolean}[] = [
-        {id: 1, name: 'john', age: 20, gender: 'male', isMarried: false},
-        {id: 2, name: 'jane', age: 27, gender: 'female', isMarried: true},
-        {id: 3, name: 'Dave', age: 22, gender: 'male', isMarried: true},
+    users: {id: number, name: string, email: string, gender: string, isMarried: boolean}[] = [
+        {id: 1, name: 'John', email: 'john@gmal.com', gender: 'male', isMarried: false},
+        {id: 2, name: 'Jane', email: 'jane@gmail.com', gender: 'female', isMarried: true},
+        {id: 3, name: 'Dave', email: 'dave@gmail.com', gender: 'male', isMarried: true},
     ]
 
     getAllUsers(){
@@ -13,7 +13,7 @@ export class UsersService{
         return this.users.find(x => x.id === id);
     }
 
-    createUser(user: {id: number, name: string, age: number, gender: string, isMarried: boolean}){
+    createUser(user: {id: number, name: string, email: string, gender: string, isMarried: boolean}){
         this.users.push(user);
     }
     
