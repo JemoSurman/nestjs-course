@@ -24,8 +24,9 @@ export class UsersController {
     }
 
     @Post()
-    createUsers(@Body(new ValidationPipe()) user: CreateUserDto){
+    createUsers(@Body() user: CreateUserDto){
         return 'A new user has been created';
+       
     }
      
 }
