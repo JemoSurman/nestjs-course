@@ -1,30 +1,36 @@
-import { forwardRef, Inject } from "@nestjs/common";
-import { AuthService } from "../auth/auth.service";
+import { Injectable } from "@nestjs/common";
+import { Repository } from "typeorm";
+import { User } from "./users.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { CreateUserDto } from "./dtos/create-user.dto";
 
+@Injectable()
 export class UsersService{
     constructor(
-        @Inject(forwardRef (() => AuthService))
-        private readonly authService: AuthService){}
-
-    users: {id: Number, name: string, email: string, gender: string, isMarried: boolean, password: string}[] = [
-        {id: 1, name: 'John', email: 'john@gmal.com', gender: 'male', isMarried: false, password: 'test1234'},
-        {id: 2, name: 'Jane', email: 'jane@gmail.com', gender: 'female', isMarried: true, password: 'test1234'},
-        {id: 3, name: 'Dave', email: 'dave@gmail.com', gender: 'male', isMarried: true, password: 'test1234'},
-    ]
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>
+    ){}
 
     getAllUsers(){
-        if(this.authService.isAuthenticated){
-            return this.users;
+        return this.userRepository.find()
+    }
+
+
+    public async createUser(userDTO: CreateUserDto){
+        //Validate if a user exist with the given email
+        const user = await this.userRepository.findOne({
+            where: { email: userDTO.email }
+        })
+
+        //Handle the error / exception
+        if(user){
+            return 'The user with the given email already exists!';
         }
-        return 'You are not logged-in';
-    }
 
-    getUsersById(id: Number){
-        return this.users.find(x => x.id === id);
+        //creating that user
+        let newUser = this.userRepository.create(userDTO);
+        newUser = await this.userRepository.save(newUser);
+        
+        return newUser;
     }
-
-    createUser(user: {id: Number, name: string, email: string, gender: string, isMarried: boolean, password: string}){
-        this.users.push(user);
-    }
-    
 }

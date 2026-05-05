@@ -9,31 +9,14 @@ export class UsersController {
     constructor(private readonly usersService: UsersService){}
 
     @Get()
-    getUsers(
-        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number, 
-        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number
-    )
-    {
-         
+    getUsers(){
         return this.usersService.getAllUsers();
-    }
-
-    @Get(':id')
-    getUsersById(@Param('id', ParseIntPipe) id: number){
-        console.log(typeof id, id);
-        return this.usersService.getUsersById(id);
     }
 
     @Post()
     createUsers(@Body() user: CreateUserDto){
-        return 'A new user has been created';
+        return this.usersService.createUser(user);
        
-    }
-
-    @Patch()
-    updateUser(@Body() body: UpdateUserDto){
-        console.log(body);
-        return 'User updated successfull!';
     }
      
 }
