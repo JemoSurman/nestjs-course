@@ -1,6 +1,6 @@
 import { IsDate, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 
-export class CreateProdileDto {
+export class CreateProfileDto {
     @IsString()
     @IsOptional()
     @MaxLength(100)
