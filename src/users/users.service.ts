@@ -30,4 +30,17 @@ export class UsersService{
         //Save the user object
         await this.userRepository.save(user);
     }
+
+    public async deleteUser(id: number){
+        //Find the user with given id
+        let user = await this.userRepository.findOneBy({id});
+        //Delete user
+        await this.userRepository.delete(id);
+        //Delete profile
+        if(user?.profile){
+            await this.profileRepository.delete(user.profile.id);
+        }
+        //Send a response
+        return {deleted: true};
+    }
 }
