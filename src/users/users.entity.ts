@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Profile } from "../profile/profile.entity";
+import { Tweet } from "../tweet/tweet.entity";
 
 @Entity()
 export class User{
@@ -43,4 +44,7 @@ export class User{
 
     @DeleteDateColumn()
     deleteAt!: Date;
+
+    @OneToMany(() => Tweet, (tweet) => tweet.user)
+    tweets!: Tweet[];
 }
