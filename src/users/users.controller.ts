@@ -21,5 +21,7 @@ export class UsersController {
     public async deleteUser(@Param('id', ParseIntPipe) id: number){
         this.usersService.deleteUser(id);
     }
+
+    
      
 }
