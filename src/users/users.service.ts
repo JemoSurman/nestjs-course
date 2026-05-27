@@ -19,7 +19,7 @@ export class UsersService{
     ){}
 
     getAllUsers(){
-        const environment = this.configService.get<string>('ENV_MODE');
+        const environment = this.configService.get('ENV_MODE');
         console.log(environment);
         return this.userRepository.find({
             relations: {
