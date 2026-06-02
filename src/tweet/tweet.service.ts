@@ -1,4 +1,4 @@
-import { Injectable, Param, ParseIntPipe } from '@nestjs/common';
+import { Injectable, NotFoundException, Param, ParseIntPipe } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { Repository } from 'typeorm';
 import { Tweet } from './tweet.entity';
@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { HashtagService } from '../hashtag/hashtag.service';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
+
 
 @Injectable()
 export class TweetService {
@@ -17,7 +18,14 @@ export class TweetService {
     ) {}
 
     public async getTweets(userId: number){
+        let user = await this.userService.findUserById(userId);
+
+        if(!user){
+            throw new NotFoundException(`User with ${userId} is not found!`);
+        }
+
         return await this.tweetRepository.find({
+
             where: {user: {id: userId}},
             relations: { user: true, hashtags: true }
         })

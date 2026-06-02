@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, RequestTimeoutException } from "@nestjs/common";
 import { Repository } from "typeorm";
 import { User } from "./users.entity";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -7,7 +7,7 @@ import { Profile } from "../profile/profile.entity";
 import { ConfigService } from "@nestjs/config";
 
 @Injectable()
-export class UsersService{
+export class UsersService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
@@ -16,39 +16,57 @@ export class UsersService{
 
         @InjectRepository(Profile)
         private readonly profileRepository: Repository<Profile>
-    ){}
+    ) { }
 
-    getAllUsers(){
-        const environment = this.configService.get('ENV_MODE');
-        console.log(environment);
-        return this.userRepository.find({
-            relations: {
-                profile: true 
+    public async getAllUsers() {
+        try {
+            return await this.userRepository.find({
+                relations: {
+                    profile: true
+                }
+            })
+        } catch (error) {
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
+                throw new RequestTimeoutException('An error has occured. please try again later', {
+                    description: 'Could not connect to database.'
+                });
             }
-        })
+            console.log(error);
+        }
+
     }
 
 
-    public async createUser(userDTO: CreateUserDto){
-        
-        //Create a Profile & save
-        userDTO.profile = userDTO.profile ?? {};
-        //Create User Object
-        let user = this.userRepository.create(userDTO);
+    public async createUser(userDTO: CreateUserDto) {
+        try {
 
-        //Save the user object
-        await this.userRepository.save(user);
+            userDTO.profile = userDTO.profile ?? {};
+
+            let user = this.userRepository.create(userDTO);
+
+            await this.userRepository.save(user);
+
+        } catch (error) {
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNREFUSED') {
+                throw new RequestTimeoutException('An error has occured. please try again later', {
+                    description: 'Could not connect to database.'
+                });
+            }
+            if(error && typeof error === 'object' && 'code' in error && error.code === '23505'){
+                throw new BadRequestException('There is some dublicate value for the user in Database');
+            }
+        }
     }
 
-    public async deleteUser(id: number){
+    public async deleteUser(id: number) {
         //Delete user
         await this.userRepository.delete(id);
-        
+
         //Send a response
-        return {deleted: true};
+        return { deleted: true };
     }
 
     public async findUserById(id: number) {
-        return await this.userRepository.findOneBy({id: id});
+        return await this.userRepository.findOneBy({ id: id });
     }
 }
