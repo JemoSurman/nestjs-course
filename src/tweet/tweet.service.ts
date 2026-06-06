@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { HashtagService } from '../hashtag/hashtag.service';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
+import { PaginationQueryDto } from '../common/pagination/dto/pagination-query.dto';
 
 
 @Injectable()
@@ -17,8 +18,12 @@ export class TweetService {
         
     ) {}
 
-    public async getTweets(userId: number){
+    public async getTweets(userId: number, paginQueryDto: PaginationQueryDto){
         let user = await this.userService.findUserById(userId);
+        
+        const page = paginQueryDto.page! ?? 1;
+        const limit = paginQueryDto.limit ?? 10;
+
 
         if(!user){
             throw new NotFoundException(`User with ${userId} is not found!`);
@@ -27,7 +32,9 @@ export class TweetService {
         return await this.tweetRepository.find({
 
             where: {user: {id: userId}},
-            relations: { user: true, hashtags: true }
+            relations: { user: true, hashtags: true },
+            skip: (page - 1) * limit,
+            take: limit
         })
     }
 
