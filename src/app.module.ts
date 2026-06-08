@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import { DatabaseModule } from './database/database.module';
+import { PaginationModule } from './common/pagination/pagination.module';
 import envValidator from './config/env.validation'
 
 const ENV = process.env.NODE_ENV;
@@ -29,7 +30,8 @@ const ENV = process.env.NODE_ENV;
     TweetModule,
     AuthModule,
     ProfileModule,
-    HashtagModule
+    HashtagModule,
+    PaginationModule
   ],
   controllers: [AppController],
   providers: [AppService],

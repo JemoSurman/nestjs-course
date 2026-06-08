@@ -30,9 +30,7 @@ export class TweetService {
         }
 
         return await this.tweetRepository.find({
-
             where: {user: {id: userId}},
-            relations: { user: true, hashtags: true },
             skip: (page - 1) * limit,
             take: limit
         })
