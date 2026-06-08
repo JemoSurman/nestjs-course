@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Param, ParseIntPipe } from '@nestjs/common';
+import { Injectable, NotFoundException} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { Repository } from 'typeorm';
 import { Tweet } from './tweet.entity';
@@ -7,6 +7,7 @@ import { CreateTweetDto } from './dto/create-tweet.dto';
 import { HashtagService } from '../hashtag/hashtag.service';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
 import { PaginationQueryDto } from '../common/pagination/dto/pagination-query.dto';
+import { PaginationProvider } from '../common/pagination/pagination.provider';
 
 
 @Injectable()
@@ -14,26 +15,29 @@ export class TweetService {
     constructor(
         private readonly userService: UsersService,
         private readonly hashtagService: HashtagService,
-        @InjectRepository(Tweet) private readonly tweetRepository: Repository<Tweet>
+        
+        @InjectRepository(Tweet) private readonly tweetRepository: Repository<Tweet>,
+
+        private readonly paginationProvider: PaginationProvider
         
     ) {}
 
     public async getTweets(userId: number, paginQueryDto: PaginationQueryDto){
         let user = await this.userService.findUserById(userId);
-        
-        const page = paginQueryDto.page! ?? 1;
-        const limit = paginQueryDto.limit ?? 10;
-
 
         if(!user){
             throw new NotFoundException(`User with ${userId} is not found!`);
         }
 
-        return await this.tweetRepository.find({
-            where: {user: {id: userId}},
-            skip: (page - 1) * limit,
-            take: limit
-        })
+        return await this.paginationProvider.paginateQuery(
+            paginQueryDto,
+            this.tweetRepository,
+            { user: { id: userId }},
+            {
+                user: true,
+                hashtags: true
+            }
+        )
     }
 
     public async CreateTweet(createTweetDto : CreateTweetDto){
