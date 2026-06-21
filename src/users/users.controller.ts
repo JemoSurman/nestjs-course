@@ -8,8 +8,8 @@ export class UsersController {
     constructor(private readonly usersService: UsersService){}
 
     @Get()
-    getUsers(@Query() paginationQueryDto: PaginationQueryDto){
-        return this.usersService.getAllUsers(paginationQueryDto);
+    getUsers(@Query() pageQueryDto: PaginationQueryDto){
+        return this.usersService.getAllUsers(pageQueryDto);
     }
 
     @Get(':id')

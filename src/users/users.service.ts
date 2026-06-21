@@ -1,12 +1,12 @@
-import { HttpException, HttpStatus, Injectable, RequestTimeoutException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException, RequestTimeoutException } from "@nestjs/common";
 import { Repository } from "typeorm";
 import { User } from "./users.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserAlreadyExistsException } from "../CustomExceptions/user-already-exist.exception";
 import { PaginationProvider } from "../common/pagination/pagination.provider";
-import { PaginationQueryDto } from "../common/pagination/dto/pagination-query.dto";
-import { profile } from "console";
+import { PaginationQueryDto } from "../common/pagination/dto/pagination-query.dto"; 
+import { Paginated } from "../common/pagination/paginater.interface";
 
 @Injectable()
 export class UsersService {
@@ -14,11 +14,11 @@ export class UsersService {
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
 
-        private readonly paginationProvider: PaginationProvider
+        private readonly paginationProvider: PaginationProvider,
         
     ) { }
 
-    public async getAllUsers(paginatationQueryDto: PaginationQueryDto) {
+    public async getAllUsers(paginatationQueryDto: PaginationQueryDto): Promise<Paginated<User>> {
         try {
             return await this.paginationProvider.paginateQuery(
                 paginatationQueryDto,
@@ -32,7 +32,8 @@ export class UsersService {
                     description: 'Could not connect to database.'
                 });
             }
-            console.log(error);
+            
+            throw new InternalServerErrorException('Something went wrong fetching users.');
         }
 
     }

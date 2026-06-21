@@ -10,7 +10,7 @@ import { PaginationModule } from "../common/pagination/pagination.module";
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
-  imports: [TypeOrmModule.forFeature([User, Profile]), PaginationModule]
+  imports: [PaginationModule,TypeOrmModule.forFeature([User, Profile]), PaginationModule]
 })
 export class UserModule{
 
