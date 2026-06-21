@@ -1,15 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Scope } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core'
+import type { Request } from 'express'; 
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { FindManyOptions, FindOptionsWhere, ObjectLiteral, Repository, FindOptionsRelations } from 'typeorm';
-
-@Injectable()
+import { Paginated } from './paginater.interface';
+@Injectable({ scope: Scope.REQUEST })
 export class PaginationProvider {
+    constructor(
+        @Inject(REQUEST) private readonly request: Request
+    ) {}
+    
     public async paginateQuery<T extends ObjectLiteral>(
         paginationQueryDto: PaginationQueryDto,
         repository: Repository<T>,
         where?: FindOptionsWhere<T>,
         relations?: FindOptionsRelations<T>
-    ) {
+    ): Promise<Paginated<T>> {
         const page = paginationQueryDto.page! ?? 1;
         const limit = paginationQueryDto.limit ?? 10;
         const findOptions: FindManyOptions<T> = {
@@ -28,11 +34,19 @@ export class PaginationProvider {
 
         const totalPages = Math.ceil(totalItems / limit);
 
-        const nextPage = page === totalPages ? page : page + 1;
+        const currentPage = Number(paginationQueryDto.page ?? 1);
 
-        const prevPage = page === 1 ? page : page - 1; 
+        const nextPage = currentPage === totalPages ? currentPage : currentPage + 1;
 
-        const response = {
+        const prevPage = currentPage === 1 ? currentPage : currentPage - 1; 
+
+        const baseUrl = this.request.protocol + this.request.baseUrl + '://' + this.request.headers.host + '/';
+
+        const newUrl = new URL(this.request.url, baseUrl);
+
+        console.log(newUrl);
+
+        const response: Paginated<T>  = {
             data: result,
             meta: {
                 itemsPerPage: limit,
@@ -41,10 +55,14 @@ export class PaginationProvider {
                 totalPages: totalPages
             },
             links: {
-
+                first: `${newUrl.origin}${newUrl.pathname}?limit=${limit}&page=1`,
+                last: `${newUrl.origin}${newUrl.pathname}?limit=${limit}&page=${totalPages}`,
+                current: `${newUrl.origin}${newUrl.pathname}?limit=${limit}&page=${currentPage}`,
+                next: `${newUrl.origin}${newUrl.pathname}?limit=${limit}&page=${nextPage}`,
+                previous: `${newUrl.origin}${newUrl.pathname}?limit=${limit}&page=${prevPage}`
             }
         }
 
-        return result;
+        return response;
     }
 }
