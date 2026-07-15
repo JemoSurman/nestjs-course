@@ -63,6 +63,7 @@ export class UsersService {
             let user = this.userRepository.create(userDTO);
 
             await this.userRepository.save(user);
+            
             return user;
 
         } catch (error) {
