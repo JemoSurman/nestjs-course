@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './config/auth.config';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,9 +18,16 @@ export class AuthService {
 
     isAuthenticated: Boolean = false;
 
-    login(email: string, password: string){
-        console.log(this.authConfiguration);
-        return 'User do not exist';
+    public async login(loginDto: LoginDto){
+        //1. FIND THE USER WITH USERNAME
+        let user = await this.userService.findUserByUsername(loginDto.username);
+
+        //2.IF USER IS AVALIABLE, COMPARE THE PASSWORD
+
+        //3.IF THE PASSWORD MATCH, LOGIN SUCCESS - RETURN ACCESSTOKEN
+
+        //SEND THE RESPONSE
+        return user;
     }
 
     public async singup(createUserDto : CreateUserDto){

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../users/users.module';
@@ -8,6 +8,7 @@ import { BcryptProvider } from './provider/bcrypt.provider.service';
 import authConfig from './config/auth.config';
 
 @Module({
+  controllers: [AuthController],
   providers: [
     AuthService,
     {
@@ -15,9 +16,8 @@ import authConfig from './config/auth.config';
       useClass: BcryptProvider,
     },
   ],
-  controllers: [AuthController],
   imports: [
-    UserModule, 
+    forwardRef(() => UserModule),
     ConfigModule.forFeature(authConfig)
   ],
   exports: [
