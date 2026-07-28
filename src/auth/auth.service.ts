@@ -1,10 +1,13 @@
-import {forwardRef, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './config/auth.config';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { HashingProvider } from './provider/hashing.provider.service';
+import { JwtService } from '@nestjs/jwt';
+import { emit, emitWarning } from 'process';
+
 
 @Injectable()
 export class AuthService {
@@ -15,7 +18,9 @@ export class AuthService {
     @Inject(authConfig.KEY)
     private readonly authConfiguration: ConfigType<typeof authConfig>,
 
-    private readonly hashingProvider: HashingProvider
+    private readonly hashingProvider: HashingProvider,
+
+    private readonly jwtService: JwtService
 
 ){}
 
@@ -35,14 +40,23 @@ export class AuthService {
         }
 
         //3.IF THE PASSWORD MATCH, LOGIN SUCCESS - RETURN ACCESSTOKEN
-
+        //GENERATE JWT & SEND IT IN THE RESPONSE
+        const token = await this.jwtService.signAsync({
+            sub: user.id,
+            email: user.email
+        },{
+            secret: this.authConfiguration.secret,
+            expiresIn: this.authConfiguration.expiresIn,
+            audience: this.authConfiguration.audience,
+            issuer: this.authConfiguration.issuer
+        });
 
         //SEND THE RESPONSE
         return {
-            data: user,
-            success: true,
-            message: 'User logged in Successfully'
+            token: token
         };
+
+
     }
 
     public async singup(createUserDto : CreateUserDto){
