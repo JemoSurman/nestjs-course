@@ -2,9 +2,9 @@ import { Controller, Get, Delete, Param, ParseIntPipe, Query, UseGuards} from "@
 import { UsersService } from "./users.service";
 
 import { PaginationQueryDto } from "../common/pagination/dto/pagination-query.dto";
-import { AuthorizedGuard } from "../auth/guards/authorize.guard";
+
 @Controller('users')
-@UseGuards(AuthorizedGuard)
+// @UseGuards(AuthorizedGuard)
 export class UsersController {
 
     constructor(private readonly usersService: UsersService){}
