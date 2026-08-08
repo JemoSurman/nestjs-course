@@ -30,6 +30,10 @@ export class AuthService {
         //1. FIND THE USER WITH USERNAME
         let user = await this.userService.findUserByUsername(loginDto.username);
 
+        if (!user) {
+        throw new UnauthorizedException('User not found');
+    }
+
         //2.IF USER IS AVALIABLE, COMPARE THE PASSWORD
         let isEqual:boolean = false;
 
