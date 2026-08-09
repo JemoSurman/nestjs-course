@@ -4,6 +4,7 @@ import type { ConfigType } from "@nestjs/config";
 import { Request } from "express";
 import authConfig from "../config/auth.config";
 import { Reflector } from "@nestjs/core";
+import { REQUEST_USER_KEY } from "../../constants/constants";
 
 @Injectable()
 export class AuthorizedGuard implements CanActivate {
@@ -43,7 +44,7 @@ export class AuthorizedGuard implements CanActivate {
             const payload = await this.jwtService.verifyAsync(token, {
                 secret: this.authConfiguration.secret
             }) 
-            request['user'] = payload;
+            request[REQUEST_USER_KEY] = payload;
 
         }catch(error){
             throw new UnauthorizedException();
