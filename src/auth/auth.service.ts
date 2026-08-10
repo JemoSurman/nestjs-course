@@ -6,8 +6,6 @@ import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { HashingProvider } from './provider/hashing.provider.service';
 import { JwtService } from '@nestjs/jwt';
-import { emit, emitWarning } from 'process';
-
 
 @Injectable()
 export class AuthService {
