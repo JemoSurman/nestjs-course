@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, RequestTimeoutException} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { Repository } from 'typeorm';
 import { Tweet } from './tweet.entity';
@@ -9,6 +9,9 @@ import { UpdateTweetDto } from './dto/update-tweet.dto';
 import { PaginationQueryDto } from '../common/pagination/dto/pagination-query.dto';
 import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { Paginated } from '../common/pagination/paginater.interface';
+import { ActiveUserType } from '../auth/interfaces/active-user-type.interface';
+import { User } from '../users/users.entity';
+import { Hashtag } from '../hashtag/hashtag.entity';
 
 
 @Injectable()
@@ -41,15 +44,25 @@ export class TweetService {
         )
     }
 
-    public async CreateTweet(createTweetDto : CreateTweetDto){
-        //Find user with the given userid from user table
-        let user = await this.userService.findUserById(createTweetDto.userId);
+    public async CreateTweet(createTweetDto : CreateTweetDto, userId: number){
+        let user: User | undefined = undefined;
+        let hashtags: Hashtag[] | undefined = undefined;
+        try {
+             //Find user with the given userid from user table
+            user = await this.userService.findUserById(userId);
 
-        //Fetch all the hashtags based on hashtag array
-        if(!createTweetDto.hashtags){
-            return 'hashtag not exist'
+            //Fetch all the hashtags based on hashtag array
+            if(createTweetDto.hashtags){
+                hashtags = await this.hashtagService.findHashtags(createTweetDto.hashtags)
+            }
+            
+        } catch (error) {
+            throw new RequestTimeoutException();
         }
-        let hashtags = await this.hashtagService.findHashtags(createTweetDto.hashtags)
+        if(createTweetDto.hashtags?.length !== hashtags?.length){
+            throw new BadRequestException();
+        }
+       
         
         //Create a tweet
         if(!user){
@@ -57,9 +70,13 @@ export class TweetService {
         }
         let tweet = this.tweetRepository.create({...createTweetDto, user: user, hashtags: hashtags});
         
-        //Save the tweet  
-        
-        return await this.tweetRepository.save(tweet);  
+       
+        try{
+            //Save the tweet  
+            return await this.tweetRepository.save(tweet);  
+        }catch(error){
+            throw new ConflictException(error);
+        }
     }
 
     
