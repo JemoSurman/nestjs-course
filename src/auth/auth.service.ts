@@ -24,7 +24,7 @@ export class AuthService {
 
     isAuthenticated: Boolean = false;
 
-    public async login(loginDto: LoginDto){
+    public async   login(loginDto: LoginDto){
         //1. FIND THE USER WITH USERNAME
         let user = await this.userService.findUserByUsername(loginDto.username);
 
@@ -53,6 +53,15 @@ export class AuthService {
             issuer: this.authConfiguration.issuer
         });
 
+        const refreshToken = await this.jwtService.signAsync({
+            sub: user.id,
+        },{
+            secret: this.authConfiguration.secret,
+            expiresIn: this.authConfiguration.refreshTokenExpiresIn,
+            audience: this.authConfiguration.audience,
+            issuer: this.authConfiguration.issuer
+        });
+
         //SEND THE RESPONSE
         return {
             token: token
@@ -63,5 +72,17 @@ export class AuthService {
 
     public async singup(createUserDto : CreateUserDto){
         return await this.userService.createUser(createUserDto );
+    }
+
+    private async signToken<T>(userId: number, expiresIn: number, payload?: T){
+        return await this.jwtService.signAsync({
+            sub: userId,
+            ...payload
+        },{
+            secret: this.authConfiguration.secret,
+            expiresIn: expiresIn,
+            audience: this.authConfiguration.audience,
+            issuer: this.authConfiguration.issuer
+        });
     }
 }
