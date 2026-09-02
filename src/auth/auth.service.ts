@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '../users/users.entity';
 import { emitWarning } from 'process';
 import { ActiveUserType } from './interfaces/active-user-type.interface';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
@@ -52,6 +53,28 @@ export class AuthService {
 
     public async singup(createUserDto : CreateUserDto){
         return await this.userService.createUser(createUserDto );
+    }
+
+    public async RefreshToken(refreshTokenDto: RefreshTokenDto){
+        try{
+            //1. VERIFY THE REFRESH TOKEN
+            const { sub } = await this.jwtService.verifyAsync(refreshTokenDto.refreshToken, {
+            secret: this.authConfiguration.secret,
+            audience: this.authConfiguration.audience,
+            issuer: this.authConfiguration.issuer
+        })
+
+        //2. FIND THE USER FROM DB USING USER ID
+        const user = await this.userService.findUserById(sub);
+
+        //3. GENERATE AN ACCESS TOKEN & REFRESH TOKEN
+        return await this.generateToken(user);
+
+        }catch(error){
+            throw new UnauthorizedException(error);
+        }
+        
+
     }
 
     private async signToken<T>(userId: number, expiresIn: number, payload?: T){
