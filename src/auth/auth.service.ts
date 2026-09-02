@@ -6,6 +6,9 @@ import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { HashingProvider } from './provider/hashing.provider.service';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '../users/users.entity';
+import { emitWarning } from 'process';
+import { ActiveUserType } from './interfaces/active-user-type.interface';
 
 @Injectable()
 export class AuthService {
@@ -43,30 +46,7 @@ export class AuthService {
 
         //3.IF THE PASSWORD MATCH, LOGIN SUCCESS - RETURN ACCESSTOKEN
         //GENERATE JWT & SEND IT IN THE RESPONSE
-        const token = await this.jwtService.signAsync({
-            sub: user.id,
-            email: user.email
-        },{
-            secret: this.authConfiguration.secret,
-            expiresIn: this.authConfiguration.expiresIn,
-            audience: this.authConfiguration.audience,
-            issuer: this.authConfiguration.issuer
-        });
-
-        const refreshToken = await this.jwtService.signAsync({
-            sub: user.id,
-        },{
-            secret: this.authConfiguration.secret,
-            expiresIn: this.authConfiguration.refreshTokenExpiresIn,
-            audience: this.authConfiguration.audience,
-            issuer: this.authConfiguration.issuer
-        });
-
-        //SEND THE RESPONSE
-        return {
-            token: token
-        };
-
+        return this.generateToken(user);
 
     }
 
@@ -84,5 +64,15 @@ export class AuthService {
             audience: this.authConfiguration.audience,
             issuer: this.authConfiguration.issuer
         });
+    }
+
+    private async generateToken(user: User){
+        //GENERATE AN ACCESS TOKEN
+        const accessToken = await this.signToken<Partial<ActiveUserType>>(user.id, this.authConfiguration.expiresIn, {email: user.email});
+
+        //GENERATE A REFRESH TOKEN
+        const refreshToken = await this.signToken(user.id, this.authConfiguration.refreshTokenExpiresIn);
+
+        return { token: accessToken, refreshToken};
     }
 }
