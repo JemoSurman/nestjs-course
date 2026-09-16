@@ -1,20 +1,18 @@
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, RequestTimeoutException, UnauthorizedException } from "@nestjs/common";
-import { Repository } from "typeorm";
-import { User } from "./users.entity";
-import { InjectRepository } from "@nestjs/typeorm";
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { UserAlreadyExistsException } from "../CustomExceptions/user-already-exist.exception";
 import { PaginationProvider } from "../common/pagination/pagination.provider";
 import { PaginationQueryDto } from "../common/pagination/dto/pagination-query.dto"; 
 import { Paginated } from "../common/pagination/paginater.interface";
 import { HashingProvider } from "../auth/provider/hashing.provider.service";
-import { error } from "console";
+import { PrismaService } from "../ prisma/prisma.service";
+import { profile } from "console";
+import { User } from "@prisma/client"
 
 @Injectable()
 export class UsersService {
     constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
+        private readonly prisma: PrismaService,
 
         private readonly paginationProvider: PaginationProvider,
 
@@ -22,13 +20,13 @@ export class UsersService {
         @Inject(forwardRef( () => HashingProvider))
         private readonly hashingProvider: HashingProvider
         
-    ) { }
+    ) {}
 
     public async getAllUsers(paginatationQueryDto: PaginationQueryDto): Promise<Paginated<User>> {
         try {
             return await this.paginationProvider.paginateQuery(
                 paginatationQueryDto,
-                this.userRepository,
+                this.prisma.user,
                 {},
                 { profile: true }
             )
@@ -50,7 +48,7 @@ export class UsersService {
 
             userDTO.profile = userDTO.profile ?? {};
 
-            const existingUserWithUsername = await this.userRepository.findOne({
+            const existingUserWithUsername = await this.prisma.user.findUnique({
                 where: {username: userDTO.username}
             })
 
@@ -58,7 +56,7 @@ export class UsersService {
                 throw new UserAlreadyExistsException('username', userDTO.username);
             }
 
-            const existingUserWithEmail = await this.userRepository.findOne({
+            const existingUserWithEmail = await this.prisma.user.findUnique({
                 where: {email: userDTO.email}
             })
 
@@ -66,12 +64,23 @@ export class UsersService {
                 throw new UserAlreadyExistsException('email', userDTO.email);
             }
 
-            let user = this.userRepository.create({
-                ...userDTO,
-                password: await this.hashingProvider.hashPassword(userDTO.password)
-            });
+            const hashedPassword = await this.hashingProvider.hashPassword(userDTO.password);
 
-            await this.userRepository.save(user);
+            const user = await this.prisma.user.create({
+                data: {
+                    ...userDTO,
+                    password: hashedPassword,
+                    ...(profile && {
+                        profile: {
+                            create: profile
+                        },
+                    }),
+                },
+                
+                include: {
+                    profile: true
+                }
+            });
             
             return user;
 
@@ -89,14 +98,22 @@ export class UsersService {
 
     public async deleteUser(id: number) {
         //Delete user
-        await this.userRepository.delete(id);
+        await this.prisma.user.delete({
+            where: {
+                id: id
+            }
+        });
 
         //Send a response
         return { deleted: true };
     }
 
     public async findUserById(id: number) {
-        const user =   await this.userRepository.findOneBy({ id: id });
+        const user =   await this.prisma.user.findUnique({
+            where: {
+                id: id
+            }
+        });
 
         if(!user){
             throw new HttpException({
@@ -115,8 +132,10 @@ export class UsersService {
         let user: User | null = null;
 
         try{
-            user = await this.userRepository.findOneBy({
-                username: username
+            user = await this.prisma.user.findUnique({
+                where: {
+                    username: username
+                }
             })
         }catch(error){
             throw new RequestTimeoutException(error, {

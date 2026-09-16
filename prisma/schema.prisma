@@ -1,0 +1,84 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model RefreshToken {
+    id String @id @default(uuid())
+    token String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+
+    userId Int
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("refresh_tokens")
+}
+
+model Hashtag {
+    id Int @id @default(autoincrement())
+    name String @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    deletedAt DateTime?
+
+    tweets Tweet[]
+
+    @@map("hashtags")
+}
+
+model Profile {
+    id Int @id @default(autoincrement())
+    firstName String? @db.VarChar(100)   
+    lastName String? @db.VarChar(100)
+    gender String? @db.VarChar(10)
+    dateOfBirth DateTime? 
+    bio String?
+    avatar String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    deletedAt DateTime?
+
+    userId Int @unique
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("profiles")
+}
+
+model Tweet {
+  id        Int       @id @default(autoincrement())
+  text      String
+  image     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  userId    Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  hashtags  Hashtag[]
+
+  @@map("tweets")
+}
+
+model User {
+    id Int @id @default(autoincrement())
+    username String @unique @db.VarChar(24)
+    email String @unique @db.VarChar(100)
+    password String @db.VarChar(100)
+    
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    deletedAt DateTime?
+
+    profile       Profile?
+    tweets        Tweet[]
+    refreshTokens RefreshToken[]
+
+    @@map("users")
+}

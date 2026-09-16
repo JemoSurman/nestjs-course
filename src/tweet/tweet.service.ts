@@ -1,17 +1,17 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, RequestTimeoutException} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { Repository } from 'typeorm';
-import { Tweet } from './tweet.entity';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Tweet } from '@prisma/client';
 import { CreateTweetDto } from './dto/create-tweet.dto';
 import { HashtagService } from '../hashtag/hashtag.service';
 import { UpdateTweetDto } from './dto/update-tweet.dto';
 import { PaginationQueryDto } from '../common/pagination/dto/pagination-query.dto';
 import { PaginationProvider } from '../common/pagination/pagination.provider';
 import { Paginated } from '../common/pagination/paginater.interface';
-import { ActiveUserType } from '../auth/interfaces/active-user-type.interface';
-import { User } from '../users/users.entity';
-import { Hashtag } from '../hashtag/hashtag.entity';
+import { User } from '@prisma/client';
+import { Hashtag } from '@prisma/client';
+import { PrismaService } from '../ prisma/prisma.service';
+import { hash } from 'crypto';
+import { map } from 'rxjs';
 
 
 @Injectable()
@@ -19,9 +19,9 @@ export class TweetService {
     constructor(
         private readonly userService: UsersService,
         private readonly hashtagService: HashtagService,
-        
-        @InjectRepository(Tweet) private readonly tweetRepository: Repository<Tweet>,
 
+        private readonly prisma: PrismaService,
+        
         private readonly paginationProvider: PaginationProvider
         
     ) {}
@@ -35,7 +35,7 @@ export class TweetService {
 
         return await this.paginationProvider.paginateQuery(
             paginQueryDto,
-            this.tweetRepository,
+            this.prisma.tweet,
             { user: { id: userId }},
             {
                 user: true,
@@ -68,45 +68,61 @@ export class TweetService {
         if(!user){
             return 'user not exist';
         }
-        let tweet = this.tweetRepository.create({...createTweetDto, user: user, hashtags: hashtags});
-        
-       
+
+        const { hashtags: dtoHashtags, ...tweetData } = createTweetDto;
+
         try{
-            //Save the tweet  
-            return await this.tweetRepository.save(tweet);  
-        }catch(error){
+            return await this.prisma.tweet.create({
+            data: {
+                ...tweetData,
+                userId,
+
+                ...(hashtags && hashtags.length > 0 && {
+                    hashtags: {
+                        connect: hashtags.map((hashtag) => ({ id: hashtag.id })),
+                    },
+                }),
+            },
+
+            include: {
+                hashtags: true
+            }
+        }); 
+    }catch(error){
             throw new ConflictException(error);
-        }
+        } 
     }
 
     
+    
     public async UpdateTweet(updateTweetDto: UpdateTweetDto) {
+        const { id, hashtags: dtoHashtags, ...tweetData } = updateTweetDto;
         //Find all hashtags
         let hashtags;
-        if(updateTweetDto.hashtags){
-            hashtags = await this.hashtagService.findHashtags(updateTweetDto.hashtags);
-        }
+        if (dtoHashtags && dtoHashtags.length > 0) {
+            hashtags = await this.hashtagService.findHashtags(dtoHashtags);
+        }  
         //find tweet
-        let tweet = await this.tweetRepository.findOneBy({
-            id: updateTweetDto.id
+        return await this.prisma.tweet.update({
+            where: { id },
+            data: {
+                ...tweetData,
+                ...(hashtags && hashtags.length > 0 && {
+                    set: hashtags.map((hashtag) => ({ id: hashtag.id }))
+                })
+            },
+            include: {
+                hashtags: true,
+                user: true
+            }
         });
-
-        //update properties of the tweet
-        if(tweet){
-            tweet.text = updateTweetDto.text ?? tweet.text;
-            tweet.image = updateTweetDto.image ?? tweet.image;
-            tweet.hashtags = hashtags;
-        }
-        
-        //Save the tweet
-        if(tweet)
-        return await this.tweetRepository.save(tweet);
-        
     }
 
     public async deleteTweet(id: number){
-        await this.tweetRepository.delete({
-            id: id
+        await this.prisma.tweet.delete({
+            where: {
+                id
+            }
         })
 
         return {delete: true, id};

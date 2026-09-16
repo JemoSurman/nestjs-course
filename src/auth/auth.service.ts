@@ -6,8 +6,7 @@ import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { HashingProvider } from './provider/hashing.provider.service';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../users/users.entity';
-import { emitWarning } from 'process';
+import { User } from '@prisma/client';
 import { ActiveUserType } from './interfaces/active-user-type.interface';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 

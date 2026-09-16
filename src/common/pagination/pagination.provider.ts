@@ -2,35 +2,41 @@ import { Injectable, Inject, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core'
 import type { Request } from 'express'; 
 import { PaginationQueryDto } from './dto/pagination-query.dto';
-import { FindManyOptions, FindOptionsWhere, ObjectLiteral, Repository, FindOptionsRelations } from 'typeorm';
 import { Paginated } from './paginater.interface';
+
+interface PrismaModelDelegate<T> {
+    findMany(args?: any): Promise<T[]>;
+    count(args?: any): Promise<number>;
+}
+
 @Injectable({ scope: Scope.REQUEST })
 export class PaginationProvider {
     constructor(
         @Inject(REQUEST) private readonly request: Request
     ) {}
     
-    public async paginateQuery<T extends ObjectLiteral>(
+    public async paginateQuery<T>(
         paginationQueryDto: PaginationQueryDto,
-        repository: Repository<T>,
-        where?: FindOptionsWhere<T>,
-        relations?: FindOptionsRelations<T>
+        model: PrismaModelDelegate<T>,
+        where?: Record<string, any>,
+        include?: Record<string, any>
     ): Promise<Paginated<T>> {
         const page = paginationQueryDto.page! ?? 1;
         const limit = paginationQueryDto.limit ?? 10;
-        const findOptions: FindManyOptions<T> = {
-            skip: (page - 1) * limit,
+        const skip = (page - 1) * limit;
+        const queryOptions: any = {
+            skip,
             take: limit
-        }
+        };
         if(where){
-            findOptions.where = where;
+            queryOptions.where = where;
         }
-        if(relations){
-            findOptions.relations = relations;
+        if(include){
+            queryOptions.include = include;
         }
-        const result =  await repository.find(findOptions);
+        const result =  await model.findMany(queryOptions);
 
-        const totalItems = await repository.count();
+        const totalItems = await model.count();
 
         const totalPages = Math.ceil(totalItems / limit);
 
@@ -42,9 +48,7 @@ export class PaginationProvider {
 
         const baseUrl = this.request.protocol + this.request.baseUrl + '://' + this.request.headers.host + '/';
 
-        const newUrl = new URL(this.request.url, baseUrl);
-
-        console.log(newUrl);
+        const newUrl = new URL(this.request.url, baseUrl); 
 
         const response: Paginated<T>  = {
             data: result,
