@@ -1,33 +1,34 @@
 import { Injectable, Body } from '@nestjs/common';
-import { Repository, In } from 'typeorm';
-import { Hashtag } from './hashtag.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CreateHashtagDto } from './dto/create-hashtag.dto';
+import { PrismaService } from '../ prisma/prisma.service';
 
 @Injectable()
 export class HashtagService {
     constructor(
-        @InjectRepository(Hashtag)
-        private readonly hashtagRepository: Repository<Hashtag>
+        private readonly prisma: PrismaService
     ) {}
 
     public async createHashtag(@Body() createHashtagDto: CreateHashtagDto) {
-        let hashtag = this.hashtagRepository.create(createHashtagDto);
-
-        return await this.hashtagRepository.save(hashtag);
+        return await this.prisma.hashtag.create({
+            data: {
+                ...createHashtagDto
+            }
+        })
     }
 
     public async findHashtags(hashtags: number[]) {
-        return await this.hashtagRepository.find({
+        return await this.prisma.hashtag.findMany({
             where: {
-                id: In(hashtags)
+                id
             }
         })
     }
 
     public async deleteHashtag(id: number) {
-        await this.hashtagRepository.delete({
-            id: id
+        await this.prisma.hashtag.delete({
+            where: {
+                id: id
+            }
         })
 
         return {deleted: true, id};

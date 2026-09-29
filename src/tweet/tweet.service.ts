@@ -10,9 +10,6 @@ import { Paginated } from '../common/pagination/paginater.interface';
 import { User } from '@prisma/client';
 import { Hashtag } from '@prisma/client';
 import { PrismaService } from '../ prisma/prisma.service';
-import { hash } from 'crypto';
-import { map } from 'rxjs';
-
 
 @Injectable()
 export class TweetService {
